@@ -20,10 +20,11 @@ public class RobotConstants {
 
     //you need to change all these pid tuning values later when you can test
 
-    public static double[][] motorConfigs  = new double[][]{{7, 8, 8, 0.0}, 
-                                                            {5, 6, 6, 0.0}, 
-                                                            {1, 2, 2, 0.0}, 
-                                                            {3, 4, 4, 0.0}};
+    public static double[][] motorConfigs  = new double[][]{{7, 8, 8, -0.37817}, 
+                                                            {5, 6, 6, -0.62768}, 
+                                                            {1, 2, 2, -0.07}, 
+                                                            {3, 4, 4, -0.24759}};
+    //first is frontLeft, second is frontRight, third is backLeft, fourth is backRight
     //first is driveChannel, second is turnChannel, third is CANCoder, fourth is magnetOffset
 
 }

@@ -27,6 +27,8 @@ public class SwerveModule {
             RobotConstants.turnPIDTuning[2]);
     private SimpleMotorFeedforward turnFeedForward = new SimpleMotorFeedforward(RobotConstants.turnFeedTuning[0], 
             RobotConstants.turnFeedTuning[1], RobotConstants.turnFeedTuning[2]);
+    private int index;
+    //THIS IS FOR TROUBLESHOOTING GET RID OF LATER
 
 
     // constructor for swervemodule where you set the driving motor and the turning
@@ -47,15 +49,16 @@ public class SwerveModule {
 
         drivePIDController.setIntegratorRange(-RobotConstants.integratorRange,RobotConstants.integratorRange);
 
-
+        this.index = motorIndex;
     }
 
     public void setDesiredState(SwerveModuleState moduleState){
 
-        double currentAngle = turnEncoder.getAbsolutePosition().getValue() * 2 * Math.PI;
+        double currentAngle = turnEncoder.getAbsolutePosition().getValue();
 
         SwerveModuleState.optimize(moduleState, new Rotation2d(currentAngle));
-        double desiredAngle = moduleState.angle.getRadians();
+        double desiredAngle = moduleState.angle.getRotations() + 0.5;
+
         double currentDriveVelocity = driveMotor.getVelocity().getValueAsDouble();
         double desiredDriveVelocity = moduleState.speedMetersPerSecond * Math.cos(desiredAngle-currentAngle);
         double currentAngularVelocity = turnEncoder.getVelocity().getValueAsDouble();
@@ -64,16 +67,22 @@ public class SwerveModule {
         //the 0.0254 is because 2.54 is the amount of centimeters in an inch and then divide that by 100 for the meters in an inch
 
 
-        System.out.println("Desired Angle: " + (desiredAngle - currentAngle));
-        System.out.println("Desired Velocity: " + desiredDriveVelocity);
-        driveMotor.set((desiredDriveVelocity / RobotConstants.MaxSpeed) / 8);
-        turnMotor.set((desiredAngle-currentAngle / RobotConstants.MaxAngularSpeed) / 8);
+        //System.out.println("Desired Velocity: " + desiredDriveVelocity);
+        // driveMotor.set((desiredDriveVelocity / RobotConstants.MaxSpeed) / 8);
+        // turnMotor.set((desiredAngle-currentAngle / RobotConstants.MaxAngularSpeed) / 8);
+        if(index ==1){
+                System.out.println("current: "+currentAngle);
+                System.out.println("desired: "+desiredAngle);
+        }
+
+        // turnMotor.set(((desiredAngle-currentAngle) / RobotConstants.MaxAngularSpeed) / 32);
+        
         //control the speed of the drive motor
         //driveMotor.setVoltage(drivePIDController.calculate(currentDriveVelocity, desiredDriveVelocity) +
                               //driveFeedForward.calculate(currentDriveVelocity, desiredDriveVelocity));
 
-        //control the angle of the turn motor
-        //turnMotor.setVoltage(turnPIDController.calculate(currentAngle, desiredAngle) +
+        
+        turnMotor.set(turnPIDController.calculate(currentAngle, desiredAngle));
                              //turnFeedForward.calculate(currentAngularVelocity, desiredAngularVelocity));
         
 

@@ -142,10 +142,10 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    System.out.println(frontLeft.getAbsolutePosition());
-    System.out.println(frontRight.getAbsolutePosition());
-    System.out.println(backLeft.getAbsolutePosition());
-    System.out.println(backRight.getAbsolutePosition());
+    // System.out.println("FrontLeft:  "+frontLeft.getAbsolutePosition());
+    // System.out.println("FrontRight: "+frontRight.getAbsolutePosition());
+    // System.out.println("BackLeft:   "+backLeft.getAbsolutePosition());
+    // System.out.println("BackRight:  "+backRight.getAbsolutePosition());
     driveWithJoystick();
   }
 
@@ -178,13 +178,13 @@ public class Robot extends TimedRobot {
     // double calculatedRightY = smoothDrive.calculate(MathUtil.applyDeadband(-controller.getRightX(), 0.02))
     //     * RobotConstants.MaxAngularSpeed;
 
-    double calculatedLeftX = MathUtil.applyDeadband(-controller.getLeftX(), 0.05)
+    double calculatedLeftX = MathUtil.applyDeadband(-controller.getLeftX(), 0.1)
         * RobotConstants.MaxSpeed;
-    double calculatedLeftY = MathUtil.applyDeadband(controller.getLeftY(), 0.05)
+    double calculatedLeftY = MathUtil.applyDeadband(controller.getLeftY(), 0.1)
         * RobotConstants.MaxSpeed;
-    double calculatedRightY = MathUtil.applyDeadband(-controller.getRightX(), 0.05)
+    double calculatedRightY = MathUtil.applyDeadband(-controller.getRightX(), 0.1)
         * RobotConstants.MaxAngularSpeed;
-    System.out.println("Drive Params: "+calculatedLeftX+", "+calculatedLeftY+", "+calculatedRightY);
+    //System.out.println("Drive Params: "+calculatedLeftX+", "+calculatedLeftY+", "+calculatedRightY);
     drivetrain.drive(calculatedLeftX, calculatedLeftY, calculatedRightY, getPeriod());
   }
 
