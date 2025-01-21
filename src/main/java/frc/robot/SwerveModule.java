@@ -4,105 +4,109 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.wpilibj.Preferences;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 
 public class SwerveModule {
+        final VelocityVoltage driveRequest;
+        final PositionVoltage turnRequest;
+        public TalonFX driveMotor, turnMotor;
+        private final CANcoder turnEncoder;
 
-    public TalonFX driveMotor, turnMotor;
-    private final CANcoder turnEncoder;
-    // in m/s
+        // private PIDController drivePIDController = new PIDController(RobotConstants.drivePIDTuning[0],
+        //                 RobotConstants.drivePIDTuning[1], RobotConstants.drivePIDTuning[2]);
+        private SimpleMotorFeedforward driveFeedForward = new SimpleMotorFeedforward(RobotConstants.driveFeedTuning[0],
+                        RobotConstants.driveFeedTuning[1], RobotConstants.driveFeedTuning[2]);
 
-    private PIDController drivePIDController = new PIDController(RobotConstants.drivePIDTuning[0], RobotConstants.drivePIDTuning[1],
-            RobotConstants.drivePIDTuning[2]);
-    private SimpleMotorFeedforward driveFeedForward = new SimpleMotorFeedforward(RobotConstants.driveFeedTuning[0], 
-            RobotConstants.driveFeedTuning[1],  RobotConstants.driveFeedTuning[2]);
+        private PIDController turnPIDController = new PIDController(RobotConstants.turnPIDTuning[0],
+                        RobotConstants.turnPIDTuning[1], RobotConstants.turnPIDTuning[2]);
+        private SimpleMotorFeedforward turnFeedForward = new SimpleMotorFeedforward(RobotConstants.turnFeedTuning[0],
+                        RobotConstants.turnFeedTuning[1], RobotConstants.turnFeedTuning[2]);
 
-    private PIDController turnPIDController = new PIDController(RobotConstants.turnPIDTuning[0], RobotConstants.turnPIDTuning[1],
-            RobotConstants.turnPIDTuning[2]);
-    private SimpleMotorFeedforward turnFeedForward = new SimpleMotorFeedforward(RobotConstants.turnFeedTuning[0], 
-            RobotConstants.turnFeedTuning[1], RobotConstants.turnFeedTuning[2]);
-    private int index;
-    //THIS IS FOR TROUBLESHOOTING GET RID OF LATER
+        private int index;
+        // THIS IS FOR TROUBLESHOOTING GET RID OF LATER
 
+        // constructor for swervemodule where objects are initialized
+        public SwerveModule(int driveMotorChannel, int turnMotorChannel, int turnMotorEncoderChannel, int motorIndex) {
 
-    // constructor for swervemodule where you set the driving motor and the turning
-    // motor
-    public SwerveModule(int driveMotorChannel, int turnMotorChannel, int turnMotorEncoderChannel, int motorIndex) {
+                this.driveMotor = new TalonFX(driveMotorChannel);
+                this.turnMotor = new TalonFX(turnMotorChannel);
+                this.turnEncoder = new CANcoder(turnMotorEncoderChannel);
 
-        this.driveMotor  = new TalonFX(driveMotorChannel);
-        this.turnMotor   = new TalonFX(turnMotorChannel);
-        this.turnEncoder = new CANcoder(turnMotorEncoderChannel);
+                CANcoderConfiguration config = new CANcoderConfiguration();
+                config.MagnetSensor.MagnetOffset = RobotConstants.motorConfigs[motorIndex][3];
+                config.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+                config.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
 
-        CANcoderConfiguration config = new CANcoderConfiguration();
-        config.MagnetSensor.MagnetOffset        = RobotConstants.motorConfigs[motorIndex][3];
-        config.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
-        config.MagnetSensor.SensorDirection     = SensorDirectionValue.Clockwise_Positive;
+                turnEncoder.getConfigurator().apply(config);
 
-        turnEncoder.getConfigurator().apply(config);
-        // applying encoder configs
+                
+                var driveConfigs = new Slot0Configs();
+                driveConfigs.kP = RobotConstants.drivePIDTuning[0];
+                driveConfigs.kI = RobotConstants.drivePIDTuning[1]; 
+                driveConfigs.kD = RobotConstants.drivePIDTuning[2];
+                driveConfigs.kS = 0.1; //tuning to overcome static friction
+                driveConfigs.kV = 0.12; //tuning for feedforward
 
-        drivePIDController.setIntegratorRange(-RobotConstants.integratorRange,RobotConstants.integratorRange);
-
-        this.index = motorIndex;
-    }
-
-    public void setDesiredState(SwerveModuleState moduleState){
-
-        double currentAngle = turnEncoder.getAbsolutePosition().getValue();
-
-        SwerveModuleState.optimize(moduleState, new Rotation2d(currentAngle));
-        double desiredAngle = moduleState.angle.getRotations() + 0.5;
-
-        double currentDriveVelocity = driveMotor.getVelocity().getValueAsDouble();
-        double desiredDriveVelocity = moduleState.speedMetersPerSecond * Math.cos(desiredAngle-currentAngle);
-        double currentAngularVelocity = turnEncoder.getVelocity().getValueAsDouble();
-        double desiredAngularVelocity = moduleState.speedMetersPerSecond / (RobotConstants.wheelRadius * 0.0254);
-        //in order to get the desired angular velocity we take the desired linear velocity and divide it by the wheel's radius
-        //the 0.0254 is because 2.54 is the amount of centimeters in an inch and then divide that by 100 for the meters in an inch
+                var turnConfigs = new Slot1Configs();
+                turnConfigs.kP = RobotConstants.turnPIDTuning[0]; 
+                turnConfigs.kI = RobotConstants.turnPIDTuning[1]; 
+                turnConfigs.kD = RobotConstants.turnPIDTuning[2]; 
 
 
-        //System.out.println("Desired Velocity: " + desiredDriveVelocity);
-        // driveMotor.set((desiredDriveVelocity / RobotConstants.MaxSpeed) / 8);
-        // turnMotor.set((desiredAngle-currentAngle / RobotConstants.MaxAngularSpeed) / 8);
-        if(index ==1){
-                System.out.println("current: "+currentAngle);
-                System.out.println("desired: "+desiredAngle);
+                driveMotor.getConfigurator().apply(driveConfigs);
+                turnMotor.getConfigurator().apply(turnConfigs);
+
+                driveRequest = new VelocityVoltage(0).withSlot(0);
+                turnRequest = new PositionVoltage(0).withSlot(1);
+
+                // drivePIDController.setIntegratorRange(-RobotConstants.integratorRange, RobotConstants.integratorRange);
+                // turnMotor.continuous
+
+                // get rid of motor index later
+                this.index = motorIndex;
         }
 
-        // turnMotor.set(((desiredAngle-currentAngle) / RobotConstants.MaxAngularSpeed) / 32);
-        
-        //control the speed of the drive motor
-        //driveMotor.setVoltage(drivePIDController.calculate(currentDriveVelocity, desiredDriveVelocity) +
-                              //driveFeedForward.calculate(currentDriveVelocity, desiredDriveVelocity));
+        public void setDesiredState(SwerveModuleState moduleState) {
+                
+                double currentAngle = turnEncoder.getAbsolutePosition().getValue();
 
-        
-        turnMotor.set(turnPIDController.calculate(currentAngle, desiredAngle));
-                             //turnFeedForward.calculate(currentAngularVelocity, desiredAngularVelocity));
-        
+                SwerveModuleState.optimize(moduleState, new Rotation2d(currentAngle));
+                double desiredAngle = moduleState.angle.getRotations();
+                double currentDriveVelocity = driveMotor.getVelocity().getValue();
 
-        //not exactly sure where the right joystick (turning joystick) plays into this
-        //we reasoned that turning the actual robot would be done by turning all the wheels by a specific angle
-        //if all the wheels turn a certain angle then the robot would turn by that angle
-        
-    }
-    public void refreshTuning(){
-        drivePIDController.setP(Preferences.getDouble("driveKP",0));
-        drivePIDController.setI(Preferences.getDouble("driveKI",0));
-        drivePIDController.setD(Preferences.getDouble("driveKD",0));
-        turnPIDController.setP(Preferences.getDouble("turnKP",0));
-        turnPIDController.setI(Preferences.getDouble("turnKI",0));
-        turnPIDController.setD(Preferences.getDouble("turnKD",0));
+                if (index == 1) {
+                        // System.out.println("Value:
+                        // "+MathUtil.clamp(turnPIDController.calculate(currentAngle, desiredAngle),
+                        // -0.5, 0.5)+" P: "+turnPIDController.getP()+" I: "+turnPIDController.getI()+"
+                        // D: "+turnPIDController.getD());
+                        //System.out.println("current: " + currentDriveVelocity);
+                        System.out.println(currentAngle);
+                        // System.out.println("calc: " + drivePIDController.calculate(currentDriveVelocity, 0.25));
 
-        driveFeedForward = new SimpleMotorFeedforward(Preferences.getDouble("driveKS",0),
-                Preferences.getDouble("driveKV",0), Preferences.getDouble("driveKA",0));
-        turnFeedForward = new SimpleMotorFeedforward(Preferences.getDouble("turnKS",0),
-                Preferences.getDouble("turnKV",0), Preferences.getDouble("turnKA",0));
-    }
+                }
+
+                driveMotor.setControl(driveRequest.withVelocity(1));
+                turnMotor.setControl(turnRequest.withPosition(0));
+
+
+                // driveMotor.set(drivePIDController.calculate(currentDriveVelocity, 0.25));
+                // turnMotor.set(turnPIDController.calculate(currentAngle, desiredAngle));
+
+                // not exactly sure where the right joystick (turning joystick) plays into this
+                // we reasoned that turning the actual robot would be done by turning all the
+                // wheels by a specific angle
+                // if all the wheels turn a certain angle then the robot would turn by that
+                // angle
+
+        }
 
 }

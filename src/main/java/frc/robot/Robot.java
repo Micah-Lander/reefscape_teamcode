@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -31,7 +30,7 @@ public class Robot extends TimedRobot {
   private final Drivetrain drivetrain = new Drivetrain();
   // slew rate limiter lowers the rate of change of the input directly to smoothen
   // movement
-  private SlewRateLimiter smoothDrive = new SlewRateLimiter(0.5);
+  private SlewRateLimiter smoothDrive = new SlewRateLimiter(0.1);
   private SwerveModule[] swerveModules = new SwerveModule[]{drivetrain.frontLeftSwerveModule,
                                                             drivetrain.frontRightSwerveModule,
                                                             drivetrain.backLeftSwerveModule,
@@ -54,23 +53,6 @@ public class Robot extends TimedRobot {
     // and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-
-    Preferences.initDouble("driveKP",1.0);
-    Preferences.initDouble("driveKI",0.0);
-    Preferences.initDouble("driveKD",0.0);
-    Preferences.initDouble("turnKI",0.0);
-    Preferences.initDouble("turnKI",0.0);
-    Preferences.initDouble("turnKI",0.0);
-    Preferences.initDouble("driveKS",0.0);
-    Preferences.initDouble("driveKV",0.0);
-    Preferences.initDouble("driveKA",0.0);
-    Preferences.initDouble("turnKS",0.0);
-    Preferences.initDouble("turnKV",0.0);
-    Preferences.initDouble("turnKA",0.0);
-
-    for (SwerveModule module : swerveModules){
-      module.refreshTuning();
-    }
   }
 
   /**
@@ -93,14 +75,10 @@ public class Robot extends TimedRobot {
     // robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    if(controller.getAButtonPressed()){
-      for (SwerveModule module : swerveModules){
-        module.refreshTuning();
-      }
-    }
+
   }
 
-  /** This function is called once each bbbhtime the robot enters Disabled mode. */
+  /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
   }
@@ -171,21 +149,17 @@ public class Robot extends TimedRobot {
   }
 
   private void driveWithJoystick() {
-    // double calculatedLeftX = smoothDrive.calculate(MathUtil.applyDeadband(-controller.getLeftX(), 0.02))
-    //     * RobotConstants.MaxSpeed;
-    // double calculatedLeftY = smoothDrive.calculate(MathUtil.applyDeadband(controller.getLeftY(), 0.02))
-    //     * RobotConstants.MaxSpeed;
-    // double calculatedRightY = smoothDrive.calculate(MathUtil.applyDeadband(-controller.getRightX(), 0.02))
-    //     * RobotConstants.MaxAngularSpeed;
 
-    double calculatedLeftX = MathUtil.applyDeadband(-controller.getLeftX(), 0.1)
-        * RobotConstants.MaxSpeed;
-    double calculatedLeftY = MathUtil.applyDeadband(controller.getLeftY(), 0.1)
-        * RobotConstants.MaxSpeed;
-    double calculatedRightY = MathUtil.applyDeadband(-controller.getRightX(), 0.1)
-        * RobotConstants.MaxAngularSpeed;
+    // double calculatedLeftX = smoothDrive.calculate(MathUtil.applyDeadband(-controller.getLeftX(), 0.05)) * RobotConstants.MaxSpeed;
+    double calculatedLeftX = MathUtil.applyDeadband(-controller.getLeftX(), 0.05) * RobotConstants.MaxSpeed;
+    // double calculatedLeftY = smoothDrive.calculate(MathUtil.applyDeadband(controller.getLeftY(), 0.1)) * RobotConstants.MaxSpeed;
+    double calculatedLeftY = MathUtil.applyDeadband(controller.getLeftY(), 0.05) * RobotConstants.MaxSpeed;
+    // double calculatedRightY = smoothDrive.calculate(MathUtil.applyDeadband(-controller.getRightX(), 0.1)) * RobotConstants.MaxAngularSpeed;
+    double calculatedRightY = MathUtil.applyDeadband(-controller.getRightX(), 0.05) * RobotConstants.MaxAngularSpeed;
+
     //System.out.println("Drive Params: "+calculatedLeftX+", "+calculatedLeftY+", "+calculatedRightY);
-    drivetrain.drive(calculatedLeftX, calculatedLeftY, calculatedRightY, getPeriod());
+    drivetrain.drive(-calculatedLeftX, calculatedLeftY, calculatedRightY, getPeriod());
   }
 
 }
+

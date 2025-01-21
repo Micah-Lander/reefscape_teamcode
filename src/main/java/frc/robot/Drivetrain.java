@@ -23,9 +23,8 @@ public class Drivetrain {
                                                                         (int)RobotConstants.motorConfigs[3][1],
                                                                         (int)RobotConstants.motorConfigs[3][2], 3);
 
-    private final Translation2d frontLeftPosition     = new Translation2d(0.3, 0.3);
     // Add position from each wheel to middle of robot in parentheses in x and y
-    // format
+    private final Translation2d frontLeftPosition     = new Translation2d(0.3, 0.3);
     private final Translation2d frontRightPosition    = new Translation2d(-0.3, 0.3);
     private final Translation2d backLeftPosition      = new Translation2d(0.3, -0.3);
     private final Translation2d backRightPosition     = new Translation2d(-0.3, -0.3);
@@ -39,7 +38,7 @@ public class Drivetrain {
     public void drive(double calculatedLeftX, double calculatedLeftY, double calculatedRightY, double period) {
         var swerveDriveStates = swerveDriveKinematics.toSwerveModuleStates(
             ChassisSpeeds.discretize(new ChassisSpeeds(calculatedLeftX, calculatedLeftY, calculatedRightY), period));
-            
+        
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveDriveStates, RobotConstants.MaxSpeed);
 
         // we need to create setDesiredSate
