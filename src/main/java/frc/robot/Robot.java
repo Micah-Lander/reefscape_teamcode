@@ -3,7 +3,10 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot;
-
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.motorcontrol.*;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -18,7 +21,7 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
-
+  private Algae_Mechanism m_algaeMechanism;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -81,7 +84,9 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    //Algae_Mechanism.pivotMotion();
+  }
 
   @Override
   public void testInit() {
